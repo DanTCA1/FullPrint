@@ -1,7 +1,7 @@
 import os
 
 # Older version, new one got deleted
-def FullPrint(*args, end="\n"):
+def fullPrint(*args, end="\n"):
     text = ""
     tLen = 0
     nText = ""
@@ -9,15 +9,26 @@ def FullPrint(*args, end="\n"):
     termLen = os.get_terminal_size().columns # termLen => Terminal Length
     for i in args:
         text += str(i) + " "
+    text = text[:-1]
     for i in text:
         word += i
-        tLen += 1
+        if i == "\t":
+            tLen += 4
+        else:
+            tLen += 1
         if i == " ":
             if tLen >= termLen:
                 print(nText)
                 tLen = len(word)
                 nText = word
+                word = ""
             else:
                 nText += word
-    print(" " * termLen - 1, end = "\r")
-    print(text, end=end)
+                word = ""
+    
+    if tLen >= termLen:
+        print(nText)
+        print(word, end="")
+    else:
+        print(nText, end="")
+    print(end, end="")
