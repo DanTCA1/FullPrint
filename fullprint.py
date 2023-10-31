@@ -21,13 +21,13 @@ def cursorPos():
         kernel32.SetConsoleMode(kernel32.GetStdHandle(-10), OldStdinMode)
         kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), OldStdoutMode)
     if(res):
-        return (res.group("x"), res.group("y"))
+        return (int(res.group("x")), int(res.group("y")))
     return (-1, -1)
 
 def fullPrint(*args, end="\n"):
     x, y = cursorPos()
     if x != -1:
-        tLen = x
+        tLen = x - 1
     else:
         tLen = 0
     text = ""
@@ -44,7 +44,7 @@ def fullPrint(*args, end="\n"):
         else:
             tLen += 1
         if i == " ":
-            if tLen >= termLen:
+            if tLen >= termLen + 1: # I think this works because the space adds a char
                 print(nText)
                 tLen = len(word)
                 nText = word
@@ -53,9 +53,9 @@ def fullPrint(*args, end="\n"):
                 nText += word
                 word = ""
     
-    if tLen >= termLen:
+    if tLen >= termLen + 1:
         print(nText)
         print(word, end="")
     else:
-        print(nText, end="")
+        print(nText + word, end="")
     print(end, end="")
