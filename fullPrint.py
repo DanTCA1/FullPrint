@@ -144,11 +144,6 @@ def fullPrint(*args, end="\n", modeOverride=None):
 
     An end of "\\r" will return to the beginning of the string, even if it spanned multiple lines
     """
-    x, _ = cursorPos()
-    if x != -1: # First detection of where the cursor is
-        tLen = x - 1
-    else:
-        tLen = 0
 
     if not modeOverride in range(0,5) and modeOverride != None:
         raise Exception("ModeOverride not in range 0-5")
@@ -163,6 +158,15 @@ def fullPrint(*args, end="\n", modeOverride=None):
     for i in args: # Compile all the print parameters into one string
         text += str(i) + " "
     text = text[:-1]
+
+    if len(text + end) == 0: # If nothing is printed, don't run the expensive cursor script
+        return 0
+
+    x, _ = cursorPos()
+    if x != -1: # First detection of where the cursor is
+        tLen = x - 1
+    else:
+        tLen = 0
 
     backIdx = -1 # Specifies the idx at which the print has to go back to the beginning (multi-span)
     if end.find("\r") + 1:
