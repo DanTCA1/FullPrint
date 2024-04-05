@@ -188,13 +188,15 @@ def fullPrint(*args, end="\n", modeOverride=None):
             raise Exception("Woops! fullPrint has entered an infinite loop! Please contact us if you see this error.")
 
         # XXX \n processing, Priority: Med. XXX
+        nPrint = "" # nPrint => \n print
         while text.find("\n", currentIdx, min(currentIdx + charLeft, backIdx)) != -1:
             downLoc = text.find("\n", currentIdx, min(currentIdx + charLeft, backIdx)) # downLoc => down location
-            print(text[currentIdx : downLoc])
+            nPrint += text[currentIdx : downLoc] + "\n"
             currentIdx = downLoc + 1
             charLeft = termLen
             lines += 1
             # Gets the location of a \n, takes a slice from the beginning, to the \n, and then starts from there onward
+        print(nPrint, end="") # Text is compiled and then printed afterwards because calling print is s l o w
 
         # XXX Space processing, Priority: Low XXX
         spaceLoc = text.rfind(" ", currentIdx, min(currentIdx + charLeft, backIdx))
