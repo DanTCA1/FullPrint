@@ -148,95 +148,101 @@ def fullPrint(*args, end="\n", modeOverride=None):
     if not modeOverride in range(0,5) and modeOverride != None:
         raise Exception("ModeOverride not in range 0-5")
 
+    # Var init.
     global relConsolePos, mode
-    text = ""
-    nText = "" # nText => New Text
-    word = ""
+    charLeft = 0 # charLeft => characters left (in string)
+    currentIdx = 0
     lines = 0
+    text = ""
     termLen = os.get_terminal_size().columns + 1 # termLen => Terminal Length
+
 
     for i in args: # Compile all the print parameters into one string
         text += str(i) + " "
     text = text[:-1]
 
+
     if len(text + end) == 0: # If nothing is printed, don't run the expensive cursor script
         return 0
 
+
     x, _ = cursorPos()
     if x != -1: # First detection of where the cursor is
-        tLen = x - 1
+        charLeft = termLen - (x - 1)
     else:
-        tLen = 0
+        charLeft = termLen
 
-    backIdx = -1 # Specifies the idx at which the print has to go back to the beginning (multi-span)
+
+    backTriggered = True
+    backIdx = 999999 # Specifies the idx at which the print has to go back to the beginning (multi-span)
     if end.find("\r") + 1:
         backIdx = end.find("\r") + len(text)
+        backTriggered = False
     text += end
 
-    for idx in range(len(text)):
-        i = text[idx]
-        if idx == backIdx:
-            # Ran on the first case when \r appears in end
-            if i == "\r":
-                print(nText + word, end="")
-                for _ in range(lines - 1):
-                    print("\033[F", end="")
-                print("\r", end="")
-                word = ""
-                nText = ""
-                tLen = 0
-                lines = 0
-            else:
+
+    i = 0
+    while i <= len(text) + 1:
+        i += 1
+        if i > len(text):
+            raise Exception("Woops! fullPrint has entered an infinite loop! Please contact us if you see this error.")
+
+        # XXX \n processing, Priority: Med. XXX
+        nPrint = "" # nPrint => \n print
+        while text.find("\n", currentIdx, min(currentIdx + charLeft, backIdx)) != -1:
+            downLoc = text.find("\n", currentIdx, min(currentIdx + charLeft, backIdx)) # downLoc => down location
+            nPrint += text[currentIdx : downLoc] + "\n"
+            currentIdx = downLoc + 1
+            charLeft = termLen
+            lines += 1
+            # Gets the location of a \n, takes a slice from the beginning, to the \n, and then starts from there onward
+        print(nPrint, end="") # Text is compiled and then printed afterwards because calling print is s l o w
+
+        # XXX Space processing, Priority: Low XXX
+        spaceLoc = text.rfind(" ", currentIdx, min(currentIdx + charLeft, backIdx))
+        if spaceLoc != -1:
+            print(text[currentIdx : spaceLoc])
+            currentIdx = spaceLoc + 1
+            charLeft = termLen
+            lines += 1
+            # Gets the location of the last space on the line, and moves the word to the next one
+        else:
+            spaceLoc = text.find(" ", currentIdx, min(len(text), backIdx))
+            if spaceLoc == -1:
+                downLoc = text.find("\n", currentIdx, len(text))
+                if downLoc == -1:
+                    downLoc = 999999
+                spaceLoc = min(downLoc, len(text), backIdx) - 1
+                # In case the word is longer then the terminal, and the word doesn't end until the \r or the end of the string
+            temp = text[currentIdx : spaceLoc + 1]
+            print(temp, end="")
+            currentIdx = spaceLoc + 1
+            charLeft = termLen - (len(temp) % termLen)
+            lines += len(temp) // termLen
+            # If the word is longer then the terminal, print the entire thing with no \n, in case the terminal ever gets bigger
+
+
+        # XXX \r processing, Priority: High XXX
+        if currentIdx == backIdx:
+            backTriggered = True
+            backIdx = 999999
+            if text[currentIdx] != "\r":
                 # This can only be reached if backIdx was wrong
                 raise Exception("fullPrint has reached a case it cannot handle when processing \\r. Please contact us if you see this error.")
-
-        if i == "\n": # Lines are added with \n
-            if tLen >= termLen: # Checks if the word the \n is after is already the length of the terminal
-                if len(nText) == 0: # Case where the one word is the only thing on the whole line
-                    print(word)
-                else:
-                    print(nText)
-                    print(word)
-                lines += (len(nText + word) // termLen) + 1
             else:
-                print(nText + word)
-                lines += 1
-            nText = ""
-            word = ""
-            tLen = 0
-        elif i != " ":
-            word += i
-            if i == "\t": # Shorter chars are fine because the cursor script will deal with it
-                tLen += 4
-            else:
-                tLen += 1
-        else:
-            # Triggered every word, if the word is too long, its put on the next line
-            if tLen >= termLen:
-                lines += ((len(nText + word)) // termLen) # If a word is long enough, it could take up multiple lines. The entire word is still printed, without any \n incase the terminal becomes wider
-                if len(nText) == 0: # Case where the one word is the only thing on the whole line
-                    print(word + " ")
-                    tLen = 0
-                    nText = ""
-                else:
-                    print(nText)
-                    tLen = len(word)
-                    nText = word + " "
-                word = ""
-            else:
-                tLen += 1
-                nText += word + " "
-                word = ""
+                for _ in range(lines):
+                    print("\033[F", end="")
+                print("\r", end="")
+                charLeft = termLen
+                lines = 0
+        
 
-    if tLen >= termLen:
-        lines += ((len(nText + word)) // termLen)
-        if len(nText) == 0:
-            print(word)
-        else:
-            print(nText)
-            print(word)
-    else:
-        print(nText + word, end="")
+        # XXX Checks if it's done printing XXX
+        if currentIdx == len(text):
+            break
 
+    # Only triggers when the snippet above wasn't run
+    if not backTriggered:
+        raise Exception("fullPrint hasn't handled \\r correctly. Please contact us if you see this error.")
     relConsolePos += lines
     return(lines)
