@@ -81,22 +81,19 @@ def repeatPattern(
     patternLen = 0
     endLen = 0
 
-    if pattern == "":
-        return
-
     if printPattern == False:
         patternLen = len(pattern)
         endLen = len(end)
     else:
-        print(pattern, end="")
+        print("\r" + pattern, end="")
         x, _ = _cursorPos()
         patternLen = x - 1
         print("\r", end="")
 
-        print(end, end="")
+        print("\r" + end, end="")
         x, _ = _cursorPos()
         endLen = x - 1
-        print("test\r", end="")
+        print("\r", end="")
 
     fString = pattern * ((termLen - endLen) // patternLen)
     if end != "":
@@ -108,6 +105,44 @@ def repeatPattern(
         return fString
     print(fString)
     return None
+
+def padToLength(
+    text: str,
+    length: int,
+    padChar: str=" ",
+    end: str="",
+    rmExtraChars: bool=True,
+    printPattern=False
+) -> tuple[str, int]:
+    """Pads a string to a certain length, with a certain character
+
+    Args:
+        text: Text to pad
+        length: Length to pad to
+        padChar: Character to pad with. Defaults to " ".
+        end: String appended after the padding.
+        rmExtraChars: Controls whether extra character removal is on or off (remove text after the pad). Defaults to on.
+    Returns:
+        Tuple:
+        - String return / printed string
+        - Positive int if padding was added, negative int if text was longer than requested padding, 0 if no padding was added
+    """
+
+    if printPattern: # If the pattern is printed, the offset is calculated differently
+        offset = fullPrint(text, rmExtraChars=rmExtraChars, end="").x
+        if offset == None:
+            patternCount = 0
+        else:
+            patternCount = (length - offset) // len(padChar)
+    else:
+        patternCount = (length - len(text)) // len(padChar)
+
+    if printPattern:
+        if patternCount > 0:
+            print(padChar * patternCount, end="")
+        print("", end=end)
+
+    return (text + padChar * patternCount + end, patternCount * len(padChar))
 
 def saveConsolePos() -> None:
     """Saves the console position to be used later. 
@@ -132,8 +167,8 @@ def loadConsolePos() -> None:
         saveConsolePos()
 
 def setDefaults(
-    sep: str | None = " ",
-    end: str | None = "\n",
+    sep: str = " ",
+    end: str = "\n",
     rmExtraChars: bool = True,
     cursorCheck: bool = False,
     maintainWords: bool = True
@@ -151,8 +186,8 @@ def setDefaults(
 
 def fullPrint(
     *values: object,
-    sep: str | None = sepDefault,
-    end: str | None = endDefault,
+    sep: str = sepDefault,
+    end: str = endDefault,
     rmExtraChars: bool = rmExtraCharsDefault,
     cursorCheck: bool = cursorCheckDefault,
     maintainWords: bool = maintainWordsDefault
@@ -286,7 +321,7 @@ def fullPrint(
         if currentIdx == len(text):
             break
         if charLeft > len(text) - currentIdx:
-            print(text[currentIdx:], end="")
+            print(text[currentIdx:] + rmChar, end="")
             if offset != None:
                 if cursorCheck:
                     x, _ = _cursorPos()
