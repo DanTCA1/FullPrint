@@ -2,6 +2,7 @@ import os
 import sys
 import re
 import types
+import re
 from typing import Literal
 if(sys.platform == "win32"):
     import ctypes
@@ -54,6 +55,40 @@ def up():
     """
     return "\033M"
 
+def ANSILength(
+    text: str,
+    invalidANSI: bool=False
+) -> tuple[int, list[tuple[int, int]]]:
+    """Returns the length of the string (compensating for ANSI sequences), and optionally returns the location of the ANSI sequences
+    
+    Args:
+        text: Text to measure
+        invalidANSI: Whether to include invalid ANSI sequences in the length calculation (regex is more inclusive, but may take longer)
+    Returns:
+        Tuple:
+        - Length of the string
+        - List of the locations of the ANSI sequences (tuple of start and end)
+
+    ## Notes
+        - Invalid ANSI sequences are sequences that don't follow the ANSI sequence format, however, they still absorb characters when printed to console
+    """
+    if invalidANSI:
+        regex = re.compile(r"\x1b\s*(?:[\[\?](?:[0-9\s]*;\"[^\"]*\")?[^a-zA-Z]*)?(?:[a-zA-Z]|$)", re.DOTALL)
+    else:
+        regex = re.compile(r"\x1b(?:[\[][\?]?(?:[0-9]*;\"[^\"]*\")?[0-9;]*)?(?:[a-zA-Z])", re.DOTALL)
+
+    sequences = []
+
+    for match in regex.finditer(text):
+        sequences.append((match.start(), match.end()))
+
+    textLen = len(text)
+
+    for sequence in sequences:
+        textLen -= sequence[1] - sequence[0]
+
+    return (textLen, sequences)
+    
 def repeatPattern(
     pattern: str,
     end: str="",
