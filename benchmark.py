@@ -11,7 +11,7 @@ testType = {
 printTime = 1
 results = []
 for text in testType.values():
-    lines = fullPrint.fullPrint(text)
+    lines = fullPrint.fullPrint(text).y
     print(fullPrint.up() * lines, end="")
     up = fullPrint.up() * lines
     fullCount = 0
