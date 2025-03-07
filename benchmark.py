@@ -12,8 +12,8 @@ printTime = 1
 results = []
 for text in testType.values():
     lines = fullPrint.fullPrint(text).y
-    print(fullPrint.up() * lines, end="")
-    up = fullPrint.up() * lines
+    print(fullPrint.upANSI * lines, end="")
+    up = fullPrint.upANSI * lines
     fullCount = 0
     startTime = time.time()
     while time.time() <= startTime + printTime:

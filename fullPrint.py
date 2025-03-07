@@ -17,6 +17,9 @@ rmExtraCharsDefault = True
 cursorCheckDefault = False
 maintainWordsDefault = True
 
+# fullPrint constants
+upANSI = "\033M"
+
 def _cursorPos():
     # Credits to https://stackoverflow.com/questions/35526014/ for the cursor detection script
     if(sys.platform == "win32"):
@@ -48,12 +51,6 @@ def _cursorPos():
     if(res):
         return (int(res.group("x")), int(res.group("y")))
     return (-1, -1)
-
-def up():
-    """
-    Returns an ANSI sequence for going one line up in console
-    """
-    return "\033M"
 
 def ANSILength(
     text: str,
