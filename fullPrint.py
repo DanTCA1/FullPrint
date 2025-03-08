@@ -52,19 +52,21 @@ def _cursorPos():
         return (int(res.group("x")), int(res.group("y")))
     return (-1, -1)
 
-def ANSILength(
+def ANSILen(
     text: str,
-    invalidANSI: bool=False
-) -> tuple[int, list[tuple[int, int]]]:
+    invalidANSI: bool=False,
+    returnMatches: bool=False
+) -> int | tuple[int, list[tuple[int, int]]]:
     """Returns the length of the string (compensating for ANSI sequences), and returns the location of the ANSI sequences
     
     Args:
         text: Text to measure
         invalidANSI: Whether to include invalid ANSI sequences in the length calculation (regex is more inclusive, but may take longer)
+        returnMatches: Whether to return the locations of the ANSI sequences (tuple of start and end)
     Returns:
         Tuple:
         - Length of the string
-        - List of the locations of the ANSI sequences (tuple of start and end)
+        - List of the locations of the ANSI sequences if returnMatches is True (tuple of start and end)
 
     ## Notes
         - Invalid ANSI sequences are sequences that don't follow the ANSI sequence format, however, they still absorb characters when printed to console
@@ -84,7 +86,10 @@ def ANSILength(
     for sequence in sequences:
         textLen -= sequence[1] - sequence[0]
 
-    return (textLen, sequences)
+    if returnMatches:
+        return (textLen, sequences)
+    else:
+        return textLen
     
 def repeatPattern(
     pattern: str,
@@ -105,7 +110,7 @@ def repeatPattern(
         pattern: Pattern to repeat
         end: String appended after the pattern can no longer be repeated
         fitPattern: Described above
-        printPattern: Prints the pattern (may increase consistency with ANSI sequences not included in the ANSILength function)
+        printPattern: Prints the pattern (may increase consistency with ANSI sequences not included in the ANSILen function)
         invalidANSI: Whether to include invalid ANSI sequences in the length calculation (has no effect if printPattern is True)
     Returns:
         String when printPattern = False, returns None when printPattern = True
@@ -116,8 +121,8 @@ def repeatPattern(
     endLen = 0
 
     if printPattern == False:
-        patternLen = ANSILength(pattern, invalidANSI)[0]
-        endLen = ANSILength(end, invalidANSI)[0]
+        patternLen = ANSILen(pattern, invalidANSI)
+        endLen = ANSILen(end, invalidANSI)
     else:
         print("\r" + pattern, end="")
         x, _ = _cursorPos()
@@ -157,7 +162,7 @@ def padToLength(
         padChar: Character to pad with. Defaults to " ".
         end: String appended after the padding.
         rmExtraChars: Controls whether extra character removal is on or off (remove text after the pad). Defaults to on. (has no effect if printPattern is False)
-        printPattern: Prints the pattern (may increase consistency with ANSI sequences not included in the ANSILength function)
+        printPattern: Prints the pattern (may increase consistency with ANSI sequences not included in the ANSILen function)
         invalidANSI: Whether to include invalid ANSI sequences in the length calculation (has no effect if printPattern is True)
     Returns:
         Tuple:
@@ -172,7 +177,7 @@ def padToLength(
         patternCount = (length - offset) // padOffset - 1 if offset != None and padOffset != None else 0
 
     else:
-        patternCount = (length - ANSILength(text)[0]) // ANSILength(padChar)[0]
+        patternCount = (length - ANSILen(text)) // ANSILen(padChar)
 
     if printPattern:
         if patternCount > 0:
