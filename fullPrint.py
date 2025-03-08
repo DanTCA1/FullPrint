@@ -56,7 +56,7 @@ def ANSILength(
     text: str,
     invalidANSI: bool=False
 ) -> tuple[int, list[tuple[int, int]]]:
-    """Returns the length of the string (compensating for ANSI sequences), and optionally returns the location of the ANSI sequences
+    """Returns the length of the string (compensating for ANSI sequences), and returns the location of the ANSI sequences
     
     Args:
         text: Text to measure
@@ -90,7 +90,8 @@ def repeatPattern(
     pattern: str,
     end: str="",
     fitPattern: bool=True,
-    printPattern=False
+    printPattern=False,
+    invalidANSI: bool=False
 ) -> str | None:
     """Prints a pattern across the whole width of the console
 
@@ -104,7 +105,8 @@ def repeatPattern(
         pattern: Pattern to repeat
         end: String appended after the pattern can no longer be repeated
         fitPattern: Described above
-        printPattern: Prints the pattern, increases consistency if ANSI sequences are in the pattern
+        printPattern: Prints the pattern (may increase consistency with ANSI sequences not included in the ANSILength function)
+        invalidANSI: Whether to include invalid ANSI sequences in the length calculation (has no effect if printPattern is True)
     Returns:
         String when printPattern = False, returns None when printPattern = True
     """
@@ -114,8 +116,8 @@ def repeatPattern(
     endLen = 0
 
     if printPattern == False:
-        patternLen = len(pattern)
-        endLen = len(end)
+        patternLen = ANSILength(pattern, invalidANSI)[0]
+        endLen = ANSILength(end, invalidANSI)[0]
     else:
         print("\r" + pattern, end="")
         x, _ = _cursorPos()
@@ -144,7 +146,8 @@ def padToLength(
     padChar: str=" ",
     end: str="",
     rmExtraChars: bool=True,
-    printPattern=False
+    printPattern=False,
+    invalidANSI: bool=False
 ) -> tuple[str, int]:
     """Pads a string to a certain length, with a certain character
 
@@ -153,21 +156,23 @@ def padToLength(
         length: Length to pad to
         padChar: Character to pad with. Defaults to " ".
         end: String appended after the padding.
-        rmExtraChars: Controls whether extra character removal is on or off (remove text after the pad). Defaults to on.
+        rmExtraChars: Controls whether extra character removal is on or off (remove text after the pad). Defaults to on. (has no effect if printPattern is False)
+        printPattern: Prints the pattern (may increase consistency with ANSI sequences not included in the ANSILength function)
+        invalidANSI: Whether to include invalid ANSI sequences in the length calculation (has no effect if printPattern is True)
     Returns:
         Tuple:
         - String return / printed string
         - Positive int if padding was added, negative int if text was longer than requested padding, 0 if no padding was added
     """
 
+    # FIXME: printPattern currently doesn't work because fullPrint responds with the wrong offset when the pattern is printed
     if printPattern: # If the pattern is printed, the offset is calculated differently
         offset = fullPrint(text, rmExtraChars=rmExtraChars, end="").x
-        if offset == None:
-            patternCount = 0
-        else:
-            patternCount = (length - offset) // len(padChar)
+        padOffset = fullPrint(padChar, rmExtraChars=rmExtraChars, end="").x
+        patternCount = (length - offset) // padOffset - 1 if offset != None and padOffset != None else 0
+
     else:
-        patternCount = (length - len(text)) // len(padChar)
+        patternCount = (length - ANSILength(text)[0]) // ANSILength(padChar)[0]
 
     if printPattern:
         if patternCount > 0:
